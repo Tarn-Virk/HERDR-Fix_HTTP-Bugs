@@ -82,14 +82,13 @@ Both bugs confirmed. Now let the agents sort it out.
 
 ### 1. Launch Herdr (Terminal B)
 
-
-cd ~/herdr-demo
+ 
 herdr
 
 
 ### 2. Paste the lead agent prompt
 
-
+'''
 You are the lead agent for a parallel bug-fix run on a FastAPI
 contacts app at ~/herdr-demo.
 
