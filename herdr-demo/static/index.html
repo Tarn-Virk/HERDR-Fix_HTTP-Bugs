@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Herdr Demo - Contacts</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 4px; }
+    .hint { color: #666; margin-top: 0; }
+    form { display: flex; gap: 8px; margin: 24px 0; }
+    input { flex: 1; padding: 8px; font-size: 16px; }
+    button { padding: 8px 14px; font-size: 15px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+    #status { margin-top: 16px; padding: 10px; background: #f3f3f3; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Contacts</h1>
+  <p class="hint">Table refreshes every 2 seconds, so changes made by agents appear on their own.</p>
+
+  <form id="add-form">
+    <input id="name" placeholder="Name" required />
+    <input id="email" placeholder="Email" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <table>
+    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div id="status">Last response: none yet</div>
+
+  <script>
+    const rows = document.getElementById("rows");
+    const statusBox = document.getElementById("status");
+
+    function showStatus(method, res, body) {
+      statusBox.textContent = `Last response: ${method} -> ${res.status} ${JSON.stringify(body)}`;
+    }
+
+    async function load() {
+      const res = await fetch("/contacts");
+      const data = await res.json();
+      rows.innerHTML = data.map(c => `
+        <tr>
+          <td>${c.id}</td><td>${c.name}</td><td>${c.email}</td>
+          <td>
+            <button onclick="editContact(${c.id}, '${c.name}', '${c.email}')">Edit</button>
+            <button onclick="deleteContact(${c.id})">Delete</button>
+          </td>
+        </tr>`).join("");
+    }
+
+    document.getElementById("add-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = { name: document.getElementById("name").value, email: document.getElementById("email").value };
+      const res = await fetch("/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      showStatus("POST", res, await res.json());
+      e.target.reset();
+      load();
+    });
+
+    async function editContact(id, name, email) {
+      const newName = prompt("New name", name);
+      if (newName === null) return;
+      const res = await fetch(`/contacts/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newName, email }) });
+      showStatus("PUT", res, await res.json());
+      load();
+    }
+
+    async function deleteContact(id) {
+      const res = await fetch(`/contacts/${id}`, { method: "DELETE" });
+      showStatus("DELETE", res, await res.json());
+      load();
+    }
+
+    load();
+    setInterval(load, 2000);
+  </script>
+</body>
+</html>
